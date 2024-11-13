@@ -16,17 +16,11 @@ read -p "Ingrese el dominio que se le va a asignar a Moodle: " moodle_domain
 sudo apt update -y
 sudo apt upgrade -y
 
-# Instalar dependencias necesarias para Moodle
-# if ! sudo apt install -y git unzip graphviz aspell php8.3-pspell php8.3-ldap php8.3-soap php8.3-json php8.3-xmlrpc php8.3-intl php8.3-gd php8.3-mysql php8.3-curl php8.3-zip php8.3-bcmath php8.3-fpm; then
-#     echo "Error al instalar las dependencias necesarias. Abortando..."
-#     exit 1
-# fi
-
 # Descargar Moodle
 sudo mkdir -p $moodle_dir
 cd /tmp
-if ! wget https://download.moodle.org/download.php/direct/stable45/moodle-latest-45.tgz; then
-    echo "Error al descargar Moodle. Eliminando archivos creados..."
+if ! git clone -b MOODLE_405_STABLE git://git.moodle.org/moodle.git $moodle_dir; then
+    echo "Error al clonar Moodle desde el repositorio Git. Eliminando archivos creados..."
     sudo rm -rf $moodle_dir
     exit 1
 fi
