@@ -17,10 +17,10 @@ sudo apt update -y
 sudo apt upgrade -y
 
 # Instalar dependencias necesarias para Moodle
-if ! sudo apt install -y git unzip graphviz aspell php8.3-pspell php8.3-ldap php8.3-soap php8.3-json php8.3-xmlrpc php8.3-intl php8.3-gd php8.3-mysql php8.3-curl php8.3-zip php8.3-bcmath php8.3-fpm; then
-    echo "Error al instalar las dependencias necesarias. Abortando..."
-    exit 1
-fi
+# if ! sudo apt install -y git unzip graphviz aspell php8.3-pspell php8.3-ldap php8.3-soap php8.3-json php8.3-xmlrpc php8.3-intl php8.3-gd php8.3-mysql php8.3-curl php8.3-zip php8.3-bcmath php8.3-fpm; then
+#     echo "Error al instalar las dependencias necesarias. Abortando..."
+#     exit 1
+# fi
 
 # Descargar Moodle
 sudo mkdir -p $moodle_dir
