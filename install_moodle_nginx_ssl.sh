@@ -25,12 +25,6 @@ if ! git clone -b MOODLE_405_STABLE git://git.moodle.org/moodle.git $moodle_dir;
     exit 1
 fi
 
-if ! sudo tar -zxvf moodle-latest-45.tgz -C $moodle_dir --strip-components=1; then
-    echo "Error al extraer Moodle. Eliminando archivos creados..."
-    sudo rm -rf $moodle_dir
-    exit 1
-fi
-
 # Configurar permisos para Moodle
 sudo chown -R www-data:www-data $moodle_dir
 sudo chmod -R 755 $moodle_dir
