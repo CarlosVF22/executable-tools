@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Verificar que el script se esté ejecutando como root
+if [ "$EUID" -ne 0 ]; then
+  echo "Por favor, ejecute este script como root o usando sudo."
+  exit 1
+fi
+
 # Solicitar variables necesarias
 read -p "Ingrese la URL de la base de datos: " db_url
 read -p "Ingrese el nombre de la base de datos: " db_name
@@ -13,26 +19,26 @@ moodle_data_dir=${moodle_data_dir:-/var/moodledata}
 read -p "Ingrese el dominio que se le va a asignar a Moodle: " moodle_domain
 
 # Actualizar el sistema
-sudo apt update -y
-sudo apt upgrade -y
+apt update -y
+apt upgrade -y
 
 # Descargar Moodle
-sudo mkdir -p $moodle_dir
+mkdir -p $moodle_dir
 cd /tmp
 if ! git clone -b MOODLE_405_STABLE git://git.moodle.org/moodle.git $moodle_dir; then
     echo "Error al clonar Moodle desde el repositorio Git. Eliminando archivos creados..."
-    sudo rm -rf $moodle_dir
+    rm -rf $moodle_dir
     exit 1
 fi
 
 # Configurar permisos para Moodle
-sudo chown -R www-data:www-data $moodle_dir
-sudo chmod -R 755 $moodle_dir
+chown -R www-data:www-data $moodle_dir
+chmod -R 755 $moodle_dir
 
 # Crear directorio de datos de Moodle
-sudo mkdir -p $moodle_data_dir
-sudo chown -R www-data:www-data $moodle_data_dir
-sudo chmod -R 777 $moodle_data_dir
+mkdir -p $moodle_data_dir
+chown -R www-data:www-data $moodle_data_dir
+chmod -R 777 $moodle_data_dir
 
 # Crear Virtual Host para Nginx
 nginx_vhost="server {
@@ -58,38 +64,39 @@ nginx_vhost="server {
     }
 }"
 
-echo "$nginx_vhost" | sudo tee /etc/nginx/sites-available/moodle
+echo "$nginx_vhost" | tee /etc/nginx/sites-available/moodle
 
 # Activar configuración de Nginx
-if ! sudo ln -s /etc/nginx/sites-available/moodle /etc/nginx/sites-enabled/; then
+if ! ln -s /etc/nginx/sites-available/moodle /etc/nginx/sites-enabled/; then
     echo "Error al activar la configuración de Nginx. Eliminando archivos creados..."
-    sudo rm -rf $moodle_dir $moodle_data_dir /etc/nginx/sites-available/moodle /etc/nginx/sites-enabled/moodle
+    rm -rf $moodle_dir $moodle_data_dir /etc/nginx/sites-available/moodle /etc/nginx/sites-enabled/moodle
     exit 1
 fi
 
-if ! sudo nginx -t; then
+if ! nginx -t; then
     echo "Error en la configuración de Nginx. Eliminando archivos creados..."
-    sudo rm -rf $moodle_dir $moodle_data_dir /etc/nginx/sites-available/moodle /etc/nginx/sites-enabled/moodle
+    rm -rf $moodle_dir $moodle_data_dir /etc/nginx/sites-available/moodle /etc/nginx/sites-enabled/moodle
     exit 1
 fi
 
-sudo systemctl restart nginx
+systemctl restart nginx
 
 # Crear archivo config.php de Moodle
-sudo cp $moodle_dir/config-dist.php $moodle_dir/config.php
-sudo sed -i "s|\$CFG->dbhost    = 'localhost';|\$CFG->dbhost    = '$db_url';|" $moodle_dir/config.php
-sudo sed -i "s|\$CFG->dbname    = 'moodle';|\$CFG->dbname    = '$db_name';|" $moodle_dir/config.php
-sudo sed -i "s|\$CFG->dbuser    = 'username';|\$CFG->dbuser    = '$db_user';|" $moodle_dir/config.php
-sudo sed -i "s|\$CFG->dbpass    = 'password';|\$CFG->dbpass    = '$db_password';|" $moodle_dir/config.php
-sudo sed -i "s|\$CFG->wwwroot   = 'http://example.com/moodle';|\$CFG->wwwroot   = 'http://$moodle_domain';|" $moodle_dir/config.php
-sudo sed -i "s|\$CFG->dataroot  = '/your/moodledata/here';|\$CFG->dataroot  = '$moodle_data_dir';|" $moodle_dir/config.php
+cp $moodle_dir/config-dist.php $moodle_dir/config.php
+sed -i "s|\$CFG->dbhost    = 'localhost';|\$CFG->dbhost    = '$db_url';|" $moodle_dir/config.php
+sed -i "s|\$CFG->dbname    = 'moodle';|\$CFG->dbname    = '$db_name';|" $moodle_dir/config.php
+sed -i "s|\$CFG->dbuser    = 'username';|\$CFG->dbuser    = '$db_user';|" $moodle_dir/config.php
+sed -i "s|\$CFG->dbpass    = 'password';|\$CFG->dbpass    = '$db_password';|" $moodle_dir/config.php
+sed -i "s|\$CFG->wwwroot   = 'http://example.com/moodle';|\$CFG->wwwroot   = 'http://$moodle_domain';|" $moodle_dir/config.php
+sed -i "s|\$CFG->dataroot  = '/your/moodledata/here';|\$CFG->dataroot  = '$moodle_data_dir';|" $moodle_dir/config.php
 
 # Generar certificado SSL con Certbot
-if ! sudo certbot --nginx -d $moodle_domain; then
+if ! certbot --nginx -d $moodle_domain; then
     echo "Error al generar el certificado SSL. Eliminando archivos creados..."
-    sudo rm -rf $moodle_dir $moodle_data_dir /etc/nginx/sites-available/moodle /etc/nginx/sites-enabled/moodle
+    rm -rf $moodle_dir $moodle_data_dir /etc/nginx/sites-available/moodle /etc/nginx/sites-enabled/moodle
     exit 1
 fi
 
 # Mensaje final
 echo "Moodle 4.5 se ha instalado correctamente en el servidor con Nginx y SSL configurado para $moodle_domain."
+echo "Puede acceder a su sitio Moodle en https://$moodle_domain."
